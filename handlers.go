@@ -4,34 +4,61 @@ import (
     "encoding/json"
     "net/http"
 	"math/rand"
-	"log"
 
     "github.com/gorilla/mux"
 )
+
+type JSendSuccess struct {
+    Status string `json:"status"`
+    Data interface{} `json:"data"`
+}
+
+type JSendError struct {
+	Status string `json:"status"`
+	Message string `json:"message"`
+}
 
 type ShortenRequest struct {
     URL string `json:"url"`
 }
 
-type ShortenResponse struct {
-    ShortURL string `json:"url"`
+type ExistingURL struct {
+	URL string `json:"url"`
+	Existed bool `json:"existed"`
+}
+
+func buildRedirectUrl(r *http.Request, hash string) string {
+    return r.Host  + "/" + hash
+}
+
+func successResponse(w http.ResponseWriter, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(JSendSuccess{Status: "success", Data: data})
+}
+
+func failureResponse(w http.ResponseWriter, message string, code int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	json.NewEncoder(w).Encode(JSendError{Status: "error", Message: message})
 }
 
 func ShortenHandler(storage Storage) http.HandlerFunc {
     return func(w http.ResponseWriter, r *http.Request) {
         var req ShortenRequest
         if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-            http.Error(w, err.Error(), http.StatusBadRequest)
-            return
+            failureResponse(w, err.Error(), http.StatusInternalServerError)
+			return
         }
 
 		// check if the URL is already in the database
 		info, err2 := storage.Search(req.URL)
-		if err2 == nil {
-			// if it is, return the short URL
-			resp := ShortenResponse{ShortURL: r.Host + "/" + info[0].Hash}
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(resp)
+		if err2 == nil { // if it is, return the short URL
+			exists := ExistingURL{
+                URL:     buildRedirectUrl(r, info[0].Hash),
+                Existed: true,
+            }
+
+			successResponse(w, exists)
 			return
 		}
 
@@ -43,9 +70,7 @@ func ShortenHandler(storage Storage) http.HandlerFunc {
             return
         }
 
-        resp := ShortenResponse{ShortURL: r.Host + "/" + hash}
-        w.Header().Set("Content-Type", "application/json")
-        json.NewEncoder(w).Encode(resp)
+        successResponse(w, buildRedirectUrl(r, hash))
     }
 }
 
@@ -54,8 +79,8 @@ func RedirectHandler(storage Storage) http.HandlerFunc {
         hash := mux.Vars(r)["hash"]
         target, err := storage.Get(hash)
         if err != nil {
-            http.Error(w, "URL not found", http.StatusNotFound)
-            return
+            failureResponse(w, "URL not found", http.StatusNotFound)
+			return
         }
         http.Redirect(w, r, target, http.StatusFound)
     }
@@ -66,11 +91,11 @@ func URLInfoHandler(storage Storage) http.HandlerFunc {
         hash := mux.Vars(r)["hash"]
         info, err := storage.GetURLInfo(hash)
         if err != nil {
-            http.Error(w, "URL not found", http.StatusNotFound)
-            return
+            failureResponse(w, "URL not found", http.StatusNotFound)
+			return
         }
-        w.Header().Set("Content-Type", "application/json")
-        json.NewEncoder(w).Encode(info)
+
+		successResponse(w, info)
     }
 }
 
@@ -78,18 +103,17 @@ func SearchHandler(storage Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ShortenRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			failureResponse(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		results, err := storage.Search(req.URL)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			failureResponse(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(results)
+		successResponse(w, results)
 	}
 }
 
