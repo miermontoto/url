@@ -50,9 +50,11 @@ func ShortenHandler(storage Storage) http.HandlerFunc {
 			return
         }
 
+		hash := r.URL.Query().Get("hash")
+
 		// check if the URL is already in the database
 		info, err2 := storage.Search(req.URL)
-		if err2 == nil { // if it is, return the short URL
+		if (err2 == nil && hash == "") { // if it is, return the short URL
 			exists := ExistingURL{
                 URL:     buildRedirectUrl(r, info[0].Hash),
                 Existed: true,
@@ -62,7 +64,16 @@ func ShortenHandler(storage Storage) http.HandlerFunc {
 			return
 		}
 
-        hash := generateHash(storage)
+		if hash != "" {
+			// check if the hash is already in the database
+			_, err := storage.Get(hash)
+			if err == nil {
+				failureResponse(w, "Hash already exists", http.StatusConflict)
+				return
+			}
+		}
+
+		if hash == "" {hash = generateHash(storage)}
         owner := r.Header.Get("X-User")
         err := storage.Store(hash, req.URL, owner)
         if err != nil {

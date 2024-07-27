@@ -18,7 +18,6 @@ func NewSQLiteStorage(dbPath string) (*SQLiteStorage, error) {
         return nil, err
     }
 
-    // Create urls table
     _, err = db.Exec(`
         CREATE TABLE IF NOT EXISTS urls (
             hash TEXT PRIMARY KEY,
@@ -33,13 +32,13 @@ func NewSQLiteStorage(dbPath string) (*SQLiteStorage, error) {
         return nil, err
     }
 
-    // Create users table
     _, err = db.Exec(`
         CREATE TABLE IF NOT EXISTS users (
             username TEXT PRIMARY KEY,
             password TEXT NOT NULL
         )
     `)
+
     if err != nil {
         return nil, err
     }
@@ -66,15 +65,11 @@ func (s *SQLiteStorage) Get(hash string) (string, error) {
         return "", err
     }
 
-    // Update hits and last updated time
     _, err = s.db.Exec(
         "UPDATE urls SET hits = hits + 1, updated = CURRENT_TIMESTAMP WHERE hash = ?",
         hash)
-    if err != nil {
-        // Log this error, but don't fail the request
-        // You might want to use a proper logging framework in a production app
-        println("Error updating hit count:", err)
-    }
+
+	// errors when updating hit count are not fatal.
 
     return target, nil
 }
