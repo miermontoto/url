@@ -14,6 +14,7 @@ type URLInfo struct {
 type Storage interface {
     Store(hash, target, owner string) error
     Get(hash string) (string, error)
+    Search(target string) ([]URLInfo, error)
     GetURLInfo(hash string) (*URLInfo, error)
     CreateUser(username, password string) error
     AuthenticateUser(username, password string) bool

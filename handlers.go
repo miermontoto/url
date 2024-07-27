@@ -4,6 +4,7 @@ import (
     "encoding/json"
     "net/http"
 	"math/rand"
+	"log"
 
     "github.com/gorilla/mux"
 )
@@ -23,6 +24,16 @@ func ShortenHandler(storage Storage) http.HandlerFunc {
             http.Error(w, err.Error(), http.StatusBadRequest)
             return
         }
+
+		// check if the URL is already in the database
+		info, err2 := storage.Search(req.URL)
+		if err2 == nil {
+			// if it is, return the short URL
+			resp := ShortenResponse{ShortURL: r.Host + "/" + info[0].Hash}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(resp)
+			return
+		}
 
         hash := generateHash(storage)
         owner := r.Header.Get("X-User")
@@ -61,6 +72,25 @@ func URLInfoHandler(storage Storage) http.HandlerFunc {
         w.Header().Set("Content-Type", "application/json")
         json.NewEncoder(w).Encode(info)
     }
+}
+
+func SearchHandler(storage Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req ShortenRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		results, err := storage.Search(req.URL)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(results)
+	}
 }
 
 func generateHash(storage Storage) string {

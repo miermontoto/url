@@ -15,11 +15,12 @@ func main() {
     }
     defer storage.Close()
 
-    r := mux.NewRouter()
+	r := mux.NewRouter()
 
-    r.HandleFunc("/shorten", DatabaseAuth(storage)(ShortenHandler(storage))).Methods("POST")
     r.HandleFunc("/info/{hash}", DatabaseAuth(storage)(URLInfoHandler(storage))).Methods("GET")
-    r.HandleFunc("/{hash}", RedirectHandler(storage)).Methods("GET")
+	r.HandleFunc("/search", DatabaseAuth(storage)(SearchHandler(storage))).Methods("GET")
+    r.HandleFunc("/shorten", DatabaseAuth(storage)(ShortenHandler(storage))).Methods("POST")
+	r.HandleFunc("/{hash}", RedirectHandler(storage)).Methods("GET")
 
 	port := os.Getenv("PORT")
 	if port == "" {port = "4343"}

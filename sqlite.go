@@ -116,3 +116,25 @@ func (s *SQLiteStorage) AuthenticateUser(username, password string) bool {
 
     return password == storedPassword
 }
+
+func (s *SQLiteStorage) Search(target string) ([]URLInfo, error) {
+	rows, err := s.db.Query(
+		"SELECT hash, target, hits, created, updated, owner FROM urls WHERE target LIKE ?",
+		"%"+target+"%")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []URLInfo
+	for rows.Next() {
+		var info URLInfo
+		err := rows.Scan(&info.Hash, &info.Target, &info.Hits, &info.Created, &info.Updated, &info.Owner)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, info)
+	}
+
+	return results, nil
+}
