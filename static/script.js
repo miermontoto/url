@@ -43,11 +43,25 @@ document.getElementById('urlForm').addEventListener('submit', async (e) => {
 		}
 
 		const data = (await response.json()).data;
+
+		const link = document.createElement('a');
+		link.href = `${window.location.origin}/${data.hash}`;
+		link.textContent = `${window.location.origin}/${data.hash}`;
+		link.target = '_blank';
+
 		if (data.existed) {
-			showResult(`${window.location.origin}/${data.hash}\n(already existed)`, 'primary');
+			const span = document.createElement('span');
+			span.textContent = ' (already existed)';
+
+			const div = document.createElement('div');
+			div.appendChild(link);
+			div.appendChild(span);
+
+			showResult(div, 'warning');
 			return
 		}
-		showResult(`successfully generated URL: ${window.location.origin}/${data.hash}`, 'success');
+
+		showResult(link, 'success');
 	} catch (error) {
 		showError(error.message);
 	}
@@ -59,7 +73,9 @@ function showError(message) {
 
 function showResult(message, type) {
 	const resultElement = document.getElementById('result');
-	resultElement.textContent = message;
+	resultElement.innerHTML = '';
 	resultElement.className = `alert alert-${type}`;
 	resultElement.style.display = 'block';
+
+	resultElement.appendChild(message);
 }

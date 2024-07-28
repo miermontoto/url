@@ -153,6 +153,7 @@ func RedirectHandler(storage Storage) http.HandlerFunc {
 func URLInfoHandler(storage Storage) http.HandlerFunc {
     return func(w http.ResponseWriter, r *http.Request) {
         hash := mux.Vars(r)["hash"]
+
         info, err := storage.GetURLInfo(hash)
         if err != nil {
             failureResponse(w, "URL not found", http.StatusNotFound)

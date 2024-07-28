@@ -57,3 +57,20 @@ body, html {
 .alert-success {
     background-color: #006600;
 }
+
+.alert-warning {
+    background-color: #666600;
+}
+
+a {
+    color: white;
+    word-wrap: break-word;
+}
+
+a:hover, a:visited:hover {
+    color: lightgray;
+}
+
+a:visited {
+    color: white;
+}
