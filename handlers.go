@@ -4,8 +4,10 @@ import (
     "encoding/json"
     "net/http"
 	"math/rand"
+    "time"
 
     "github.com/gorilla/mux"
+    "github.com/dgrijalva/jwt-go"
 )
 
 type JSendSuccess struct {
@@ -24,6 +26,7 @@ type ShortenRequest struct {
 
 type ExistingURL struct {
 	URL string `json:"url"`
+    Hash string `json:"hash"`
 	Existed bool `json:"existed"`
 }
 
@@ -42,6 +45,40 @@ func failureResponse(w http.ResponseWriter, message string, code int) {
 	json.NewEncoder(w).Encode(JSendError{Status: "error", Message: message})
 }
 
+func AuthHandler(storage Storage) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        var creds struct {
+            Username string `json:"username"`
+            Password string `json:"password"`
+        }
+        if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
+            http.Error(w, err.Error(), http.StatusBadRequest)
+            return
+        }
+
+        if !storage.AuthenticateUser(creds.Username, creds.Password) {
+            http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+            return
+        }
+
+        expirationTime := time.Now().Add(24 * time.Hour)
+        claims := &jwt.StandardClaims{
+            ExpiresAt: expirationTime.Unix(),
+            IssuedAt:  time.Now().Unix(),
+            Subject:   creds.Username,
+        }
+
+        token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+        tokenString, err := token.SignedString(jwtKey)
+        if err != nil {
+            http.Error(w, err.Error(), http.StatusInternalServerError)
+            return
+        }
+
+        json.NewEncoder(w).Encode(map[string]string{"token": tokenString})
+    }
+}
+
 func ShortenHandler(storage Storage) http.HandlerFunc {
     return func(w http.ResponseWriter, r *http.Request) {
         var req ShortenRequest
@@ -57,6 +94,7 @@ func ShortenHandler(storage Storage) http.HandlerFunc {
 		if (err2 == nil && hash == "") { // if it is, return the short URL
 			exists := ExistingURL{
                 URL:     buildRedirectUrl(r, info[0].Hash),
+                Hash:    info[0].Hash,
                 Existed: true,
             }
 
@@ -81,7 +119,13 @@ func ShortenHandler(storage Storage) http.HandlerFunc {
             return
         }
 
-        successResponse(w, buildRedirectUrl(r, hash))
+        exists := ExistingURL{
+            URL:     buildRedirectUrl(r, hash),
+            Hash:    hash,
+            Existed: false,
+        }
+
+        successResponse(w, exists)
     }
 }
 

@@ -6,7 +6,20 @@ import (
 	"os"
 
     "github.com/gorilla/mux"
+    "github.com/joho/godotenv"
 )
+
+func loadEnv(key string) string {
+    err := godotenv.Load(".env")
+
+    if err != nil {
+        log.Fatalf("Error loading .env file")
+    }
+
+    return os.Getenv(key)
+}
+
+var jwtKey = []byte(loadEnv("JWT_KEY"))
 
 func main() {
     storage, err := NewSQLiteStorage("urls.db")
@@ -17,12 +30,21 @@ func main() {
 
 	r := mux.NewRouter()
 
-	r.HandleFunc("/search", DatabaseAuth(storage)(SearchHandler(storage))).Methods("GET")
-    r.HandleFunc("/shorten", DatabaseAuth(storage)(ShortenHandler(storage))).Methods("POST")
-    r.HandleFunc("/info/{hash}", DatabaseAuth(storage)(URLInfoHandler(storage))).Methods("GET")
+    r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+
+    // Serve index.html
+    r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+        http.ServeFile(w, r, "static/index.html")
+    }).Methods("GET")
+
+    r.HandleFunc("/auth", AuthHandler(storage)).Methods("POST")
+
+	r.HandleFunc("/search", JWTAuth((SearchHandler(storage)))).Methods("GET")
+    r.HandleFunc("/shorten", JWTAuth((ShortenHandler(storage)))).Methods("POST")
+    r.HandleFunc("/info/{hash}", JWTAuth((URLInfoHandler(storage)))).Methods("GET")
 	r.HandleFunc("/{hash}", RedirectHandler(storage)).Methods("GET")
 
-	port := os.Getenv("PORT")
+	port := loadEnv("PORT")
 	if port == "" {port = "4343"}
 
     log.Println("server running on port", port)
