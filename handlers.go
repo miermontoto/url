@@ -24,6 +24,10 @@ type ShortenRequest struct {
     URL string `json:"url"`
 }
 
+type TokenResponse struct {
+    Token string `json:"token"`
+}
+
 type ExistingURL struct {
 	URL string `json:"url"`
     Hash string `json:"hash"`
@@ -75,7 +79,8 @@ func AuthHandler(storage Storage) http.HandlerFunc {
             return
         }
 
-        json.NewEncoder(w).Encode(map[string]string{"token": tokenString})
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(TokenResponse{Token: tokenString})
     }
 }
 
@@ -91,7 +96,9 @@ func ShortenHandler(storage Storage) http.HandlerFunc {
 
 		// check if the URL is already in the database
 		info, err2 := storage.Search(req.URL)
-		if (err2 == nil && hash == "") { // if it is, return the short URL
+
+        // if it is, return the short URL
+		if (len(info) != 0 && err2 == nil && hash == "") {
 			exists := ExistingURL{
                 URL:     buildRedirectUrl(r, info[0].Hash),
                 Hash:    info[0].Hash,
@@ -132,11 +139,13 @@ func ShortenHandler(storage Storage) http.HandlerFunc {
 func RedirectHandler(storage Storage) http.HandlerFunc {
     return func(w http.ResponseWriter, r *http.Request) {
         hash := mux.Vars(r)["hash"]
+
         target, err := storage.Get(hash)
         if err != nil {
             failureResponse(w, "URL not found", http.StatusNotFound)
 			return
         }
+
         http.Redirect(w, r, target, http.StatusFound)
     }
 }
