@@ -1,41 +1,41 @@
 package main
 
 import (
-    "encoding/json"
-    "net/http"
+	"encoding/json"
 	"math/rand"
-    "time"
+	"net/http"
+	"time"
 
-    "github.com/gorilla/mux"
-    "github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go"
+	"github.com/gorilla/mux"
 )
 
 type JSendSuccess struct {
-    Status string `json:"status"`
-    Data interface{} `json:"data"`
+	Status string      `json:"status"`
+	Data   interface{} `json:"data"`
 }
 
 type JSendError struct {
-	Status string `json:"status"`
+	Status  string `json:"status"`
 	Message string `json:"message"`
 }
 
 type ShortenRequest struct {
-    URL string `json:"url"`
+	URL string `json:"url"`
 }
 
 type TokenResponse struct {
-    Token string `json:"token"`
+	Token string `json:"token"`
 }
 
 type ExistingURL struct {
-	URL string `json:"url"`
-    Hash string `json:"hash"`
-	Existed bool `json:"existed"`
+	URL     string `json:"url"`
+	Hash    string `json:"hash"`
+	Existed bool   `json:"existed"`
 }
 
 func buildRedirectUrl(r *http.Request, hash string) string {
-    return r.Host  + "/" + hash
+	return r.Host + "/" + hash
 }
 
 func successResponse(w http.ResponseWriter, data interface{}) {
@@ -50,60 +50,60 @@ func failureResponse(w http.ResponseWriter, message string, code int) {
 }
 
 func AuthHandler(storage Storage) http.HandlerFunc {
-    return func(w http.ResponseWriter, r *http.Request) {
-        var creds struct {
-            Username string `json:"username"`
-            Password string `json:"password"`
-        }
-        if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
-            http.Error(w, err.Error(), http.StatusBadRequest)
-            return
-        }
+	return func(w http.ResponseWriter, r *http.Request) {
+		var creds struct {
+			Username string `json:"username"`
+			Password string `json:"password"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 
-        if !storage.AuthenticateUser(creds.Username, creds.Password) {
-            http.Error(w, "Invalid credentials", http.StatusUnauthorized)
-            return
-        }
+		if !storage.AuthenticateUser(creds.Username, creds.Password) {
+			http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+			return
+		}
 
-        expirationTime := time.Now().Add(24 * time.Hour)
-        claims := &jwt.StandardClaims{
-            ExpiresAt: expirationTime.Unix(),
-            IssuedAt:  time.Now().Unix(),
-            Subject:   creds.Username,
-        }
+		expirationTime := time.Now().Add(24 * time.Hour)
+		claims := &jwt.StandardClaims{
+			ExpiresAt: expirationTime.Unix(),
+			IssuedAt:  time.Now().Unix(),
+			Subject:   creds.Username,
+		}
 
-        token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-        tokenString, err := token.SignedString(jwtKey)
-        if err != nil {
-            http.Error(w, err.Error(), http.StatusInternalServerError)
-            return
-        }
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+		tokenString, err := token.SignedString(jwtKey)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
-        w.Header().Set("Content-Type", "application/json")
-        json.NewEncoder(w).Encode(TokenResponse{Token: tokenString})
-    }
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(TokenResponse{Token: tokenString})
+	}
 }
 
 func ShortenHandler(storage Storage) http.HandlerFunc {
-    return func(w http.ResponseWriter, r *http.Request) {
-        var req ShortenRequest
-        if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-            failureResponse(w, err.Error(), http.StatusInternalServerError)
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req ShortenRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			failureResponse(w, err.Error(), http.StatusInternalServerError)
 			return
-        }
+		}
 
 		hash := r.URL.Query().Get("hash")
 
 		// check if the URL is already in the database
 		info, err2 := storage.Search(req.URL)
 
-        // if it is, return the short URL
-		if (len(info) != 0 && err2 == nil && hash == "") {
+		// if it is, return the short URL
+		if len(info) != 0 && err2 == nil && hash == "" {
 			exists := ExistingURL{
-                URL:     buildRedirectUrl(r, info[0].Hash),
-                Hash:    info[0].Hash,
-                Existed: true,
-            }
+				URL:     buildRedirectUrl(r, info[0].Hash),
+				Hash:    info[0].Hash,
+				Existed: true,
+			}
 
 			successResponse(w, exists)
 			return
@@ -118,50 +118,52 @@ func ShortenHandler(storage Storage) http.HandlerFunc {
 			}
 		}
 
-		if hash == "" {hash = generateHash(storage)}
-        owner := r.Header.Get("X-User")
-        err := storage.Store(hash, req.URL, owner)
-        if err != nil {
-            http.Error(w, err.Error(), http.StatusInternalServerError)
-            return
-        }
+		if hash == "" {
+			hash = generateHash(storage)
+		}
+		owner := r.Header.Get("X-User")
+		err := storage.Store(hash, req.URL, owner)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
-        exists := ExistingURL{
-            URL:     buildRedirectUrl(r, hash),
-            Hash:    hash,
-            Existed: false,
-        }
+		exists := ExistingURL{
+			URL:     buildRedirectUrl(r, hash),
+			Hash:    hash,
+			Existed: false,
+		}
 
-        successResponse(w, exists)
-    }
+		successResponse(w, exists)
+	}
 }
 
 func RedirectHandler(storage Storage) http.HandlerFunc {
-    return func(w http.ResponseWriter, r *http.Request) {
-        hash := mux.Vars(r)["hash"]
+	return func(w http.ResponseWriter, r *http.Request) {
+		hash := mux.Vars(r)["hash"]
 
-        target, err := storage.Get(hash)
-        if err != nil {
-            failureResponse(w, "URL not found", http.StatusNotFound)
+		target, err := storage.Get(hash)
+		if err != nil {
+			failureResponse(w, "URL not found", http.StatusNotFound)
 			return
-        }
+		}
 
-        http.Redirect(w, r, target, http.StatusFound)
-    }
+		http.Redirect(w, r, target, http.StatusFound)
+	}
 }
 
 func URLInfoHandler(storage Storage) http.HandlerFunc {
-    return func(w http.ResponseWriter, r *http.Request) {
-        hash := mux.Vars(r)["hash"]
+	return func(w http.ResponseWriter, r *http.Request) {
+		hash := mux.Vars(r)["hash"]
 
-        info, err := storage.GetURLInfo(hash)
-        if err != nil {
-            failureResponse(w, "URL not found", http.StatusNotFound)
+		info, err := storage.GetURLInfo(hash)
+		if err != nil {
+			failureResponse(w, "URL not found", http.StatusNotFound)
 			return
-        }
+		}
 
 		successResponse(w, info)
-    }
+	}
 }
 
 func SearchHandler(storage Storage) http.HandlerFunc {
@@ -182,19 +184,32 @@ func SearchHandler(storage Storage) http.HandlerFunc {
 	}
 }
 
+func MyURLsHandler(storage Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		owner := r.Header.Get("X-User")
+		results, err := storage.SearchByOwner(owner)
+		if err != nil {
+			failureResponse(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		successResponse(w, results)
+	}
+}
+
 func generateHash(storage Storage) string {
-    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-    const length = 3
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	const length = 3
 
-    for {
-        hash := make([]byte, length)
-        for i := range hash {
-            hash[i] = charset[rand.Intn(len(charset))]
-        }
+	for {
+		hash := make([]byte, length)
+		for i := range hash {
+			hash[i] = charset[rand.Intn(len(charset))]
+		}
 
-        _, err := storage.Get(string(hash))
-        if err != nil {
-            return string(hash)
-        }
-    }
+		_, err := storage.Get(string(hash))
+		if err != nil {
+			return string(hash)
+		}
+	}
 }

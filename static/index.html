@@ -23,17 +23,34 @@
                     <button type="submit" class="btn btn-custom w-100">login</button>
                 </form>
             </div>
-
-            <div id="shortenerForm" style="display: none;">
-                <form id="urlForm" class="mb-3">
-                    <div class="mb-3">
-                        <div class="form-text">url.</div>
-                        <input type="url" class="form-control" id="longUrl" placeholder="https://mier.info" required>
-                        <div class="form-text">custom name. (optional)</div>
-                        <input type="text" class="form-control" id="customHash" maxlength="32">
+            <div id="loggedInContent" style="display: none;">
+                <nav class="navbar navbar-expand navbar-dark bg-dark mb-4">
+                    <div class="container-fluid">
+                        <ul class="navbar-nav">
+                            <li class="nav-item">
+                                <a class="nav-link active" href="#" id="shortenLink">shorten</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" id="myUrlsLink">my URLs</a>
+                            </li>
+                        </ul>
                     </div>
-                    <button type="submit" class="btn btn-custom w-100">shorten</button>
-                </form>
+                </nav>
+                <div id="shortenerForm">
+                    <form id="urlForm" class="mb-3">
+                        <div class="mb-3">
+                            <div class="form-text">url.</div>
+                            <input type="url" class="form-control" id="longUrl" placeholder="https://mier.info" required>
+                            <div class="form-text">custom name. (optional)</div>
+                            <input type="text" class="form-control" id="customHash" maxlength="32">
+                        </div>
+                        <button type="submit" class="btn btn-custom w-100">shorten</button>
+                    </form>
+                </div>
+                <div id="myUrlsList" style="display: none;">
+                    <h2 class="text-center">my URLs</h2>
+                    <ul id="urlList" class="list-group"></ul>
+                </div>
             </div>
             <div id="result" class="alert" style="display: none;"></div>
         </div>
