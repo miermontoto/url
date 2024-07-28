@@ -27,7 +27,10 @@
             <div id="shortenerForm" style="display: none;">
                 <form id="urlForm" class="mb-3">
                     <div class="mb-3">
-                        <input type="url" class="form-control" id="longUrl" placeholder="url to be shortened." required>
+                        <div class="form-text">url.</div>
+                        <input type="url" class="form-control" id="longUrl" placeholder="https://mier.info" required>
+                        <div class="form-text">custom name. (optional)</div>
+                        <input type="text" class="form-control" id="customHash" maxlength="32">
                     </div>
                     <button type="submit" class="btn btn-custom w-100">shorten</button>
                 </form>

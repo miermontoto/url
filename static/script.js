@@ -27,14 +27,24 @@ document.getElementById('authForm').addEventListener('submit', async (e) => {
 document.getElementById('urlForm').addEventListener('submit', async (e) => {
 	e.preventDefault();
 	const longUrl = document.getElementById('longUrl').value;
+	const customHash = document.getElementById('customHash').value;
+
+	if (customHash && !/^[a-zA-Z0-9_-]+$/.test(customHash)) {
+		showError('custom hash should contain only letters, numbers, underscores and dashes.');
+		return;
+	}
+
 	try {
 		const response = await fetch('/shorten', {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
-				'Authorization': token
+				'Authorization': `Bearer ${token}`
 			},
-			body: JSON.stringify({ url: longUrl })
+			body: JSON.stringify({
+				url: longUrl,
+				customHash: customHash || undefined
+			})
 		});
 
 		if (!response.ok) {
@@ -68,7 +78,9 @@ document.getElementById('urlForm').addEventListener('submit', async (e) => {
 });
 
 function showError(message) {
-	showResult(message, 'danger');
+	const messageElement = document.createElement('span');
+	messageElement.textContent = message;
+	showResult(messageElement, 'danger');
 }
 
 function showResult(message, type) {
