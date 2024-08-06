@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 )
 
 func DatabaseAuth(storage Storage) func(http.HandlerFunc) http.HandlerFunc {
