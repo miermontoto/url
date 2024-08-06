@@ -1,6 +1,6 @@
 module github.com/miermontoto/url
 
-go 1.20.14
+go 1.21.0
 
 require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
