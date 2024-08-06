@@ -10,12 +10,7 @@ import (
 )
 
 func loadEnv(key string) string {
-	err := godotenv.Load(".env")
-
-	if err != nil {
-		log.Fatalf("Error loading .env file")
-	}
-
+	godotenv.Load()
 	return os.Getenv(key)
 }
 
