@@ -200,6 +200,19 @@ func MyURLsHandler(storage storage.Storage) http.HandlerFunc {
 	}
 }
 
+func DeleteURLHandler(storage storage.Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		hash := mux.Vars(r)["hash"]
+		err := storage.Delete(hash)
+		if err != nil {
+			failureResponse(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		successResponse(w, nil)
+	}
+}
+
 func generateHash(storage storage.Storage) string {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	const length = 3

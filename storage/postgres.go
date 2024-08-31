@@ -149,3 +149,8 @@ func (s *PostgresStorage) SearchByOwner(owner string) ([]URLInfo, error) {
 	}
 	return results, nil
 }
+
+func (s *PostgresStorage) Delete(hash string) error {
+	_, err := s.db.Exec("DELETE FROM urls WHERE hash = $1", hash)
+	return err
+}

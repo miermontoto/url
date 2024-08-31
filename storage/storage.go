@@ -20,4 +20,5 @@ type Storage interface {
 	CreateUser(username, password string) error
 	AuthenticateUser(username, password string) bool
 	Close() error
+	Delete(hash string) error
 }

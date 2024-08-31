@@ -41,6 +41,7 @@ func main() {
 	r.HandleFunc("/info/{hash}", JWTAuth((URLInfoHandler(storage)))).Methods("GET")
 	r.HandleFunc("/my", JWTAuth((MyURLsHandler(storage)))).Methods("GET")
 	r.HandleFunc("/{hash}", RedirectHandler(storage)).Methods("GET")
+	r.HandleFunc("/my/{hash}", JWTAuth(DeleteURLHandler(storage))).Methods("DELETE")
 
 	port := loadEnv("PORT")
 	if port == "" {

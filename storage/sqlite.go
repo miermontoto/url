@@ -157,3 +157,8 @@ func (s *SQLiteStorage) SearchByOwner(owner string) ([]URLInfo, error) {
 
 	return results, nil
 }
+
+func (s *SQLiteStorage) Delete(hash string) error {
+	_, err := s.db.Exec("DELETE FROM urls WHERE hash = ?", hash)
+	return err
+}
