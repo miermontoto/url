@@ -1,14 +1,14 @@
-package main
+package storage
 
 import "time"
 
 type URLInfo struct {
-	Hash    string `json:"hash"`
-	Target  string `json:"target"`
-	Hits    int   `json:"hits"`
+	Hash    string    `json:"hash"`
+	Target  string    `json:"target"`
+	Hits    int       `json:"hits"`
 	Created time.Time `json:"created"`
 	Updated time.Time `json:"updated"`
-	Owner   string `json:"owner"`
+	Owner   string    `json:"owner"`
 }
 
 type Storage interface {

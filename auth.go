@@ -5,9 +5,10 @@ import (
 	"strings"
 
 	"github.com/golang-jwt/jwt"
+	"github.com/miermontoto/url/storage"
 )
 
-func DatabaseAuth(storage Storage) func(http.HandlerFunc) http.HandlerFunc {
+func DatabaseAuth(storage storage.Storage) func(http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			username, password, ok := r.BasicAuth()

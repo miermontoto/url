@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-
+	"github.com/miermontoto/url/storage"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 )
@@ -17,7 +17,9 @@ func loadEnv(key string) string {
 var jwtKey = []byte(loadEnv("JWT_KEY"))
 
 func main() {
-	storage, err := NewSQLiteStorage("urls.db")
+	// storage, err := NewSQLiteStorage("urls.db")
+	storage, err := storage.NewPostgresStorage(loadEnv("PSQL_CONN"))
+
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -1,4 +1,4 @@
-package main
+package storage
 
 import (
 	"database/sql"
@@ -11,6 +11,8 @@ import (
 type SQLiteStorage struct {
 	db *sql.DB
 }
+
+var _ Storage = &SQLiteStorage{}
 
 func NewSQLiteStorage(dbPath string) (*SQLiteStorage, error) {
 	db, err := sql.Open("sqlite3", dbPath)

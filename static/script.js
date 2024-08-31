@@ -38,15 +38,15 @@ async function sendRequest(url, method, body) {
 document.getElementById('urlForm').addEventListener('submit', async (e) => {
 	e.preventDefault();
 	const url = document.getElementById('longUrl').value;
-	const customHash = document.getElementById('customHash').value;
+	const hash = document.getElementById('customHash').value;
 
-	if (customHash && !/^[a-zA-Z0-9_-]+$/.test(customHash)) {
+	if (hash && !/^[a-zA-Z0-9_-]+$/.test(hash)) {
 		showError('custom hash should contain only letters, numbers, underscores and dashes.');
 		return;
 	}
 
 	try {
-		const data = (await sendRequest('/shorten', 'POST', { url, customHash })).data;
+		const data = (await sendRequest('/shorten', 'POST', { url, hash })).data;
 
 		const link = document.createElement('a');
 		link.href = `${window.location.origin}/${data.hash}`;

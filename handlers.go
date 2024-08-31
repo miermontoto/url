@@ -8,6 +8,7 @@ import (
 
 	"github.com/golang-jwt/jwt"
 	"github.com/gorilla/mux"
+	"github.com/miermontoto/url/storage"
 )
 
 type JSendSuccess struct {
@@ -22,6 +23,7 @@ type JSendError struct {
 
 type ShortenRequest struct {
 	URL string `json:"url"`
+	Hash string `json:"hash"`
 }
 
 type TokenResponse struct {
@@ -49,7 +51,7 @@ func failureResponse(w http.ResponseWriter, message string, code int) {
 	json.NewEncoder(w).Encode(JSendError{Status: "error", Message: message})
 }
 
-func AuthHandler(storage Storage) http.HandlerFunc {
+func AuthHandler(storage storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var creds struct {
 			Username string `json:"username"`
@@ -84,7 +86,7 @@ func AuthHandler(storage Storage) http.HandlerFunc {
 	}
 }
 
-func ShortenHandler(storage Storage) http.HandlerFunc {
+func ShortenHandler(storage storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ShortenRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -92,7 +94,7 @@ func ShortenHandler(storage Storage) http.HandlerFunc {
 			return
 		}
 
-		hash := r.URL.Query().Get("hash")
+		hash := req.Hash
 
 		// check if the URL is already in the database
 		info, err2 := storage.Search(req.URL)
@@ -121,6 +123,7 @@ func ShortenHandler(storage Storage) http.HandlerFunc {
 		if hash == "" {
 			hash = generateHash(storage)
 		}
+
 		owner := r.Header.Get("X-User")
 		err := storage.Store(hash, req.URL, owner)
 		if err != nil {
@@ -138,7 +141,7 @@ func ShortenHandler(storage Storage) http.HandlerFunc {
 	}
 }
 
-func RedirectHandler(storage Storage) http.HandlerFunc {
+func RedirectHandler(storage storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		hash := mux.Vars(r)["hash"]
 
@@ -152,7 +155,7 @@ func RedirectHandler(storage Storage) http.HandlerFunc {
 	}
 }
 
-func URLInfoHandler(storage Storage) http.HandlerFunc {
+func URLInfoHandler(storage storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		hash := mux.Vars(r)["hash"]
 
@@ -166,7 +169,7 @@ func URLInfoHandler(storage Storage) http.HandlerFunc {
 	}
 }
 
-func SearchHandler(storage Storage) http.HandlerFunc {
+func SearchHandler(storage storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req ShortenRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -184,7 +187,7 @@ func SearchHandler(storage Storage) http.HandlerFunc {
 	}
 }
 
-func MyURLsHandler(storage Storage) http.HandlerFunc {
+func MyURLsHandler(storage storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		owner := r.Header.Get("X-User")
 		results, err := storage.SearchByOwner(owner)
@@ -197,7 +200,7 @@ func MyURLsHandler(storage Storage) http.HandlerFunc {
 	}
 }
 
-func generateHash(storage Storage) string {
+func generateHash(storage storage.Storage) string {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	const length = 3
 
