@@ -15,15 +15,20 @@
         <div class="content">
             <h1 class="mb-4 text-center">url.mier.info</h1>
             <div id="loginForm">
-                <form id="authForm" class="mb-3">
-                    <div class="mb-3">
-                        <input type="text" class="form-control" id="username" placeholder="user" required>
+                <div class="d-flex flex-column">
+                    <form id="authForm">
+                        <div class="mb-3">
+                            <input type="text" class="form-control" id="username" placeholder="user" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="password" class="form-control" id="password" placeholder="pass" required>
+                        </div>
+                        <button type="submit" class="btn btn-custom w-100 mb-3">login</button>
+                    </form>
+                    <div class="text-center text-muted small">
+                        private service - authentication required
                     </div>
-                    <div class="mb-3">
-                        <input type="password" class="form-control" id="password" placeholder="pass" required>
-                    </div>
-                    <button type="submit" class="btn btn-custom w-100">login</button>
-                </form>
+                </div>
             </div>
             <div id="loggedInContent" style="display: none;">
                 <nav class="navbar navbar-expand navbar-dark bg-dark mb-4">
@@ -34,6 +39,11 @@
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" href="#" id="myUrlsLink">my URLs</a>
+                            </li>
+                        </ul>
+                        <ul class="navbar-nav ms-auto">
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" id="logoutLink">logout</a>
                             </li>
                         </ul>
                     </div>
@@ -51,15 +61,14 @@
                     </form>
                 </div>
                 <div id="myUrlsList" style="display: none;">
-                    <h2 class="text-center">my URLs</h2>
                     <table class="table table-dark table-striped">
                         <thead>
                             <tr>
                                 <th>hash</th>
                                 <th>target</th>
-                                <th>hits</th>
-                                <th>date</th>
-                                <th>actions</th>
+                                <th class="sortable" data-sort="hits">hits ↕</th>
+                                <th class="sortable" data-sort="date">date ↕</th>
+                                <th>btns</th>
                             </tr>
                         </thead>
                         <tbody id="urlsTableBody"></tbody>
@@ -67,9 +76,25 @@
                 </div>
             </div>
             <div id="result" class="alert" style="display: none;"></div>
+            <div id="dashboard" class="mt-4 text-center" style="display: none;">
+                <div class="d-flex justify-content-around">
+                    <div class="dashboard-stat">
+                        <div class="stat-value" id="totalHits">-</div>
+                        <div class="stat-label">total hits</div>
+                    </div>
+                    <div class="dashboard-stat">
+                        <div class="stat-value" id="totalUrls">-</div>
+                        <div class="stat-label">URLs</div>
+                    </div>
+                    <div class="dashboard-stat">
+                        <div class="stat-value" id="availableCodes">-</div>
+                        <div class="stat-label">codes left</div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-    <script src="/static/script.js"></script>
+    <script type="module" src="/static/js/main.js"></script>
 </body>
 
 </html>

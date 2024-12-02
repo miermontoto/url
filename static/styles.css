@@ -17,19 +17,83 @@ html {
     color: white;
     font-family: 'Berkeley Mono', 'Courier Prime', monospace;
     font-weight: lighter;
+    margin: 0;
+    padding: 0;
 }
 
 .container {
-    height: 100%;
+    min-height: 100vh;
+    padding: 2rem 0;
     display: flex;
-    flex-direction: column;
+    align-items: center;
+}
+
+#loginForm {
+    display: flex;
     justify-content: center;
+    width: 100%;
 }
 
 .content {
     max-width: 600px;
     margin: 0 auto;
+    width: 100%;
+    padding: 0 1rem;
 }
+
+#loggedInContent {
+    margin-top: 0;
+}
+
+/* Remove conflicting margin rules */
+#loggedInContent:not([style*="display: none"]) ~ .content {
+    margin-top: 0;
+}
+
+#myUrlsList {
+    overflow-y: auto;
+    max-height: calc(100vh - 250px);
+}
+
+/* Table responsive styles */
+.table {
+    table-layout: fixed;
+    width: 100%;
+    border-color: #333;
+}
+
+.table th, .table td {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    padding: 0.5rem;
+}
+
+.table th.sortable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.table th.sortable:hover {
+    background-color: #333;
+}
+
+/* Navbar hover effect */
+.navbar .nav-link {
+    padding: 0.5rem 1rem;
+    transition: none;
+    border-radius: 4px;
+}
+
+.navbar .nav-link:hover {
+    background-color: #333;
+}
+
+/* Column widths */
+.table th:nth-child(1), .table td:nth-child(1) { width: 15%; } /* hash */
+.table th:nth-child(2), .table td:nth-child(2) { width: 45%; } /* target */
+.table th:nth-child(3), .table td:nth-child(3) { width: 10%; } /* hits */
+.table th:nth-child(4), .table td:nth-child(4) { width: 20%; } /* date */
+.table th:nth-child(5), .table td:nth-child(5) { width: 10%; } /* actions */
 
 .form-control {
     background-color: #333;
@@ -45,6 +109,10 @@ html {
     background-color: #444;
     color: white;
     box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.25);
+}
+
+.form-text {
+    color: whitesmoke;
 }
 
 .btn-custom {
@@ -89,4 +157,92 @@ a:visited:hover {
 
 a:visited {
     color: white;
+}
+
+/* Dashboard styles */
+#dashboard {
+    border-top: 1px solid #333;
+    padding-top: 1.5rem;
+    margin-top: 2rem;
+}
+
+.dashboard-stat {
+    min-width: 120px;
+    padding: 0.5rem;
+    transition: transform 0.2s ease;
+}
+
+.dashboard-stat:hover {
+    transform: translateY(-2px);
+}
+
+.stat-value {
+    font-size: 1.4rem;
+    font-weight: bold;
+    margin-bottom: 0.3rem;
+}
+
+.stat-label {
+    color: #999;
+    font-size: 0.8rem;
+}
+
+/* Enhance button styles */
+.btn {
+    transition: transform 0.1s ease;
+}
+
+.btn:active {
+    transform: scale(0.97);
+}
+
+.btn-danger {
+    background-color: #660000;
+    border-color: #660000;
+}
+
+.btn-danger:hover {
+    background-color: #800000;
+    border-color: #800000;
+}
+
+/* Enhance form styles */
+.form-control {
+    transition: border-color 0.2s ease;
+}
+
+.form-control:hover:not(:focus) {
+    border-color: #999;
+}
+
+/* Navbar refinements */
+.navbar {
+    border-radius: 6px;
+    padding: 0.5rem;
+}
+
+.nav-link.active {
+    font-weight: bold;
+}
+
+/* Alert refinements */
+.alert {
+    border-radius: 6px;
+    border-width: 1px;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+/* Title enhancement */
+h1, h2 {
+    letter-spacing: -0.5px;
+}
+
+h1 {
+    margin-bottom: 2rem;
+}
+
+/* Hide dashboard when URLs list is visible */
+#myUrlsList[style*="display: block"] ~ #dashboard {
+    display: none !important;
 }
