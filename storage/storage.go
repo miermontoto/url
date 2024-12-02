@@ -13,7 +13,7 @@ type URLInfo struct {
 
 type Storage interface {
 	Store(hash, target, owner string) error
-	Get(hash string) (string, error)
+	Get(hash string, ip string) (string, error)
 	Search(target string) ([]URLInfo, error)
 	SearchByOwner(owner string) ([]URLInfo, error)
 	GetURLInfo(hash string) (*URLInfo, error)

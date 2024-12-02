@@ -3,6 +3,7 @@ package storage
 import (
 	"database/sql"
 	"errors"
+
 	_ "github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -23,7 +24,6 @@ func NewPostgresStorage(connStr string) (*PostgresStorage, error) {
 		CREATE TABLE IF NOT EXISTS urls (
 			hash TEXT PRIMARY KEY,
 			target TEXT NOT NULL,
-			hits INTEGER DEFAULT 0,
 			created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			owner TEXT NOT NULL
@@ -43,6 +43,25 @@ func NewPostgresStorage(connStr string) (*PostgresStorage, error) {
 		return nil, err
 	}
 
+	_, err = db.Exec(`
+		CREATE INDEX IF NOT EXISTS target_idx ON urls (target)
+	`)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS hits (
+			hash TEXT PRIMARY KEY REFERENCES urls(hash),
+			hits INTEGER DEFAULT 0,
+			ip TEXT NOT NULL,
+			time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		)
+	`)
+	if err != nil {
+		return nil, err
+	}
+
 	return &PostgresStorage{db: db}, nil
 }
 
@@ -53,7 +72,7 @@ func (s *PostgresStorage) Store(hash, target, owner string) error {
 	return err
 }
 
-func (s *PostgresStorage) Get(hash string) (string, error) {
+func (s *PostgresStorage) Get(hash string, ip string) (string, error) {
 	var target string
 	err := s.db.QueryRow(
 		"SELECT target FROM urls WHERE hash = $1",
@@ -65,9 +84,14 @@ func (s *PostgresStorage) Get(hash string) (string, error) {
 		return "", err
 	}
 
+	if ip == "api" {
+		return target, nil
+	}
+
 	_, err = s.db.Exec(
-		"UPDATE urls SET hits = hits + 1, updated = CURRENT_TIMESTAMP WHERE hash = $1",
-		hash)
+		"INSERT INTO hits (hash, ip) VALUES ($1, '$2') ON CONFLICT (hash) DO UPDATE SET hits = hits + 1",
+		hash, ip)
+
 	// errors when updating hit count are not fatal.
 	return target, nil
 }

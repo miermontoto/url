@@ -55,7 +55,7 @@ func (s *SQLiteStorage) Store(hash, target, owner string) error {
 	return err
 }
 
-func (s *SQLiteStorage) Get(hash string) (string, error) {
+func (s *SQLiteStorage) Get(hash string, ip string) (string, error) {
 	var target string
 	err := s.db.QueryRow(
 		"SELECT target FROM urls WHERE hash = ?",

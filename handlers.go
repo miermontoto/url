@@ -113,7 +113,7 @@ func ShortenHandler(storage storage.Storage) http.HandlerFunc {
 
 		if hash != "" {
 			// check if the hash is already in the database
-			_, err := storage.Get(hash)
+			_, err := storage.Get(hash, "api")
 			if err == nil {
 				failureResponse(w, "Hash already exists", http.StatusConflict)
 				return
@@ -145,7 +145,7 @@ func RedirectHandler(storage storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		hash := mux.Vars(r)["hash"]
 
-		target, err := storage.Get(hash)
+		target, err := storage.Get(hash, getIP(r))
 		if err != nil {
 			failureResponse(w, "URL not found", http.StatusNotFound)
 			return
@@ -223,9 +223,20 @@ func generateHash(storage storage.Storage) string {
 			hash[i] = charset[rand.Intn(len(charset))]
 		}
 
-		_, err := storage.Get(string(hash))
+		_, err := storage.Get(string(hash), "api")
 		if err != nil {
 			return string(hash)
 		}
 	}
+}
+
+func getIP(r *http.Request) string {
+    ip := r.Header.Get("X-Real-IP")
+    if ip == "" {
+        ip = r.Header.Get("X-Forwarded-For")
+    }
+    if ip == "" {
+        ip = r.RemoteAddr
+    }
+    return ip
 }
