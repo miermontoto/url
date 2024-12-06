@@ -27,7 +27,13 @@ async function sendRequest(url, method, body) {
 
   if (!response.ok) {
     if (response.status === 401) {
-      throw new Error('invalid credentials');
+      setToken('');
+      document.getElementById('loggedInContent').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'none';
+      document.getElementById('loginForm').style.display = 'block';
+      document.getElementById('username').value = '';
+      document.getElementById('password').value = '';
+      throw new Error('session expired - please login again');
     }
     throw new Error(response.statusText);
   }
