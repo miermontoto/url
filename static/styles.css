@@ -127,6 +127,15 @@ html {
     border-color: #e0e0e0;
 }
 
+/* el botón de login es un <a>: sin esto, la regla a:visited de más abajo lo
+   pintaría de blanco (texto blanco sobre fondo blanco). texto negro en todos
+   los estados de enlace */
+.btn-custom:link,
+.btn-custom:visited,
+.btn-custom:visited:hover {
+    color: black;
+}
+
 .alert {
     background-color: #333;
     color: white;
