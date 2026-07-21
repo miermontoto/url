@@ -188,16 +188,19 @@ func (a *auth) CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-// GET /auth/logout: cierra la sesión local y, si se puede, la del emisor
+// GET /auth/logout: por defecto cierra SOLO la sesión local (las cookies de url) y
+// deja viva la sesión sso de mier id, así volver a entrar es silencioso (sin pedir
+// credenciales otra vez). con ?all=1 propaga al idp (end_session) para "salir de todo".
 func (a *auth) LogoutHandler(w http.ResponseWriter, r *http.Request) {
+	idToken, _ := r.Cookie(cookieIDToken)
 	a.clearCookie(w, cookieIDToken, "/")
 	a.clearCookie(w, cookieRefresh, "/")
-	// end_session en el idp para cerrar también su sesión sso (best-effort)
-	if a.cfg.postLogout != "" && a.ensure(r.Context()) == nil {
+
+	if r.URL.Query().Get("all") == "1" && a.cfg.postLogout != "" && a.ensure(r.Context()) == nil {
 		if endpoint, ok := a.endSessionEndpoint(); ok {
 			q := "post_logout_redirect_uri=" + a.cfg.postLogout
-			if c, err := r.Cookie(cookieIDToken); err == nil {
-				q += "&id_token_hint=" + c.Value
+			if idToken != nil {
+				q += "&id_token_hint=" + idToken.Value
 			}
 			http.Redirect(w, r, endpoint+"?"+q, http.StatusFound)
 			return
