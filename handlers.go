@@ -4,9 +4,7 @@ import (
 	"encoding/json"
 	"math/rand"
 	"net/http"
-	"time"
 
-	"github.com/golang-jwt/jwt"
 	"github.com/gorilla/mux"
 	"github.com/miermontoto/url/storage"
 )
@@ -24,10 +22,6 @@ type JSendError struct {
 type ShortenRequest struct {
 	URL string `json:"url"`
 	Hash string `json:"hash"`
-}
-
-type TokenResponse struct {
-	Token string `json:"token"`
 }
 
 type ExistingURL struct {
@@ -49,41 +43,6 @@ func failureResponse(w http.ResponseWriter, message string, code int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	json.NewEncoder(w).Encode(JSendError{Status: "error", Message: message})
-}
-
-func AuthHandler(storage storage.Storage) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var creds struct {
-			Username string `json:"username"`
-			Password string `json:"password"`
-		}
-		if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		if !storage.AuthenticateUser(creds.Username, creds.Password) {
-			http.Error(w, "Invalid credentials", http.StatusUnauthorized)
-			return
-		}
-
-		expirationTime := time.Now().Add(24 * time.Hour)
-		claims := &jwt.StandardClaims{
-			ExpiresAt: expirationTime.Unix(),
-			IssuedAt:  time.Now().Unix(),
-			Subject:   creds.Username,
-		}
-
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-		tokenString, err := token.SignedString(jwtKey)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(TokenResponse{Token: tokenString})
-	}
 }
 
 func ShortenHandler(storage storage.Storage) http.HandlerFunc {
@@ -124,7 +83,7 @@ func ShortenHandler(storage storage.Storage) http.HandlerFunc {
 			hash = generateHash(storage)
 		}
 
-		owner := r.Header.Get("X-User")
+		owner := ownerOf(r)
 		err := storage.Store(hash, req.URL, owner)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -189,7 +148,7 @@ func SearchHandler(storage storage.Storage) http.HandlerFunc {
 
 func MyURLsHandler(storage storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		owner := r.Header.Get("X-User")
+		owner := ownerOf(r)
 		results, err := storage.SearchByOwner(owner)
 		if err != nil {
 			failureResponse(w, err.Error(), http.StatusInternalServerError)
@@ -203,8 +162,19 @@ func MyURLsHandler(storage storage.Storage) http.HandlerFunc {
 func DeleteURLHandler(storage storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		hash := mux.Vars(r)["hash"]
-		err := storage.Delete(hash)
+
+		// solo el dueño puede borrar su url (antes cualquiera podía borrar cualquier hash)
+		info, err := storage.GetURLInfo(hash)
 		if err != nil {
+			failureResponse(w, "URL not found", http.StatusNotFound)
+			return
+		}
+		if info.Owner != ownerOf(r) {
+			failureResponse(w, "not found", http.StatusNotFound)
+			return
+		}
+
+		if err := storage.Delete(hash); err != nil {
 			failureResponse(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

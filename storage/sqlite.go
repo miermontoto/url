@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	_ "github.com/mattn/go-sqlite3"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type SQLiteStorage struct {
@@ -30,17 +29,6 @@ func NewSQLiteStorage(dbPath string) (*SQLiteStorage, error) {
             owner TEXT NOT NULL
         )
     `)
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = db.Exec(`
-        CREATE TABLE IF NOT EXISTS users (
-            username TEXT PRIMARY KEY,
-            password TEXT NOT NULL
-        )
-    `)
-
 	if err != nil {
 		return nil, err
 	}
@@ -94,25 +82,6 @@ func (s *SQLiteStorage) Close() error {
 	return s.db.Close()
 }
 
-func (s *SQLiteStorage) CreateUser(username, password string) error {
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return err
-	}
-
-	_, err = s.db.Exec("INSERT INTO users (username, password) VALUES (?, ?)", username, string(hashedPassword))
-	return err
-}
-
-func (s *SQLiteStorage) AuthenticateUser(username, password string) bool {
-	var storedPassword string
-	err := s.db.QueryRow("SELECT password FROM users WHERE username = ?", username).Scan(&storedPassword)
-	if err != nil {
-		return false
-	}
-
-	return password == storedPassword
-}
 
 func (s *SQLiteStorage) Search(target string) ([]URLInfo, error) {
 	rows, err := s.db.Query(

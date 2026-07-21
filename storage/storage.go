@@ -17,8 +17,6 @@ type Storage interface {
 	Search(target string) ([]URLInfo, error)
 	SearchByOwner(owner string) ([]URLInfo, error)
 	GetURLInfo(hash string) (*URLInfo, error)
-	CreateUser(username, password string) error
-	AuthenticateUser(username, password string) bool
 	Close() error
 	Delete(hash string) error
 }

@@ -1,0 +1,7 @@
+postgres-data/
+backups/
+url-shortener
+url-shortener.service
+*.db
+.env
+.git/

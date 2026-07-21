@@ -1,4 +1,4 @@
-import { getToken, sendRequest, setToken } from './api.js';
+import { sendRequest, showLogin } from './api.js';
 import { updateDashboard } from './dashboard.js';
 import { displayUrls, initSortHandlers } from './table.js';
 import { hideResult, showError, showResult, showView } from './ui.js';
@@ -15,36 +15,25 @@ async function loadMyUrls() {
   }
 }
 
-// si hay token, ocultar el formulario de login y mostrar el contenido loggeado
-if (getToken()) {
-  document.getElementById('loginForm').style.display = 'none';
-  document.getElementById('loggedInContent').style.display = 'block';
-  showView(false);
-  loadMyUrls();
-}
-
-// login handler
-document.getElementById('authForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
+// la sesión vive en una cookie httpOnly que el js no puede leer: se pregunta al
+// backend por /auth/me para saber si hay sesión y mostrar la vista correspondiente
+async function initSession() {
   try {
-    const data = await sendRequest('/auth', 'POST', {
-      username: document.getElementById('username').value,
-      password: document.getElementById('password').value
-    });
-    setToken(data.token);
-    hideResult();
+    const response = await fetch('/auth/me');
+    if (!response.ok) {
+      showLogin();
+      return;
+    }
     document.getElementById('loginForm').style.display = 'none';
     document.getElementById('loggedInContent').style.display = 'block';
     showView(false);
     loadMyUrls();
-  } catch (error) {
-    if (error.message === 'Unauthorized') {
-      showError('invalid credentials');
-    } else {
-      showError(error.message);
-    }
+  } catch {
+    showLogin();
   }
-});
+}
+
+initSession();
 
 // handler del form
 document.getElementById('urlForm').addEventListener('submit', async (e) => {
@@ -97,13 +86,8 @@ document.getElementById('myUrlsLink').addEventListener('click', (e) => {
 
 document.getElementById('logoutLink').addEventListener('click', (e) => {
   e.preventDefault();
-  setToken('');
-  document.getElementById('loggedInContent').style.display = 'none';
-  document.getElementById('dashboard').style.display = 'none';
-  document.getElementById('loginForm').style.display = 'block';
-  document.getElementById('username').value = '';
-  document.getElementById('password').value = '';
-  hideResult();
+  // el backend limpia las cookies de sesión y cierra la sesión sso del emisor
+  window.location.href = '/auth/logout';
 });
 
 // inicializar los handlers de orden en la tabla

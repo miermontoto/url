@@ -1,49 +1,33 @@
-let token = localStorage.getItem('token') || '';
-
-function getToken() {
-  return token;
-}
-
-function setToken(newToken) {
-  token = newToken;
-  if (newToken) {
-    localStorage.setItem('token', newToken);
-  } else {
-    localStorage.removeItem('token');
-  }
-}
+// la autenticación es por cookie httpOnly de sesión (patrón backend-for-frontend):
+// el navegador no maneja tokens, solo envía la cookie same-origin en cada petición.
 
 async function sendRequest(url, method, body) {
-  const headers = { 'Content-Type': 'application/json' };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
   const response = await fetch(url, {
     method,
-    headers,
-    body: JSON.stringify(body)
+    headers: { 'Content-Type': 'application/json' },
+    body: body === undefined ? undefined : JSON.stringify(body)
   });
 
   if (!response.ok) {
     if (response.status === 401) {
-      setToken('');
-      document.getElementById('loggedInContent').style.display = 'none';
-      document.getElementById('dashboard').style.display = 'none';
-      document.getElementById('loginForm').style.display = 'block';
-      document.getElementById('username').value = '';
-      document.getElementById('password').value = '';
+      showLogin();
       throw new Error('session expired - please login again');
     }
     throw new Error(response.statusText);
   }
 
-  const data = await response.json();
-  return data;
+  return await response.json();
+}
+
+// muestra el formulario de login y oculta el contenido privado
+function showLogin() {
+  document.getElementById('loggedInContent').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('loginForm').style.display = 'block';
 }
 
 async function deleteUrl(hash) {
   return await sendRequest(`/my/${hash}`, 'DELETE');
 }
 
-export { deleteUrl, getToken, sendRequest, setToken };
+export { deleteUrl, sendRequest, showLogin };

@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	_ "github.com/lib/pq"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type PostgresStorage struct {
@@ -27,16 +26,6 @@ func NewPostgresStorage(connStr string) (*PostgresStorage, error) {
 			created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			owner TEXT NOT NULL
-		)
-	`)
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = db.Exec(`
-		CREATE TABLE IF NOT EXISTS users (
-			username TEXT PRIMARY KEY,
-			password TEXT NOT NULL
 		)
 	`)
 	if err != nil {
@@ -112,24 +101,6 @@ func (s *PostgresStorage) GetURLInfo(hash string) (*URLInfo, error) {
 
 func (s *PostgresStorage) Close() error {
 	return s.db.Close()
-}
-
-func (s *PostgresStorage) CreateUser(username, password string) error {
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return err
-	}
-	_, err = s.db.Exec("INSERT INTO users (username, password) VALUES ($1, $2)", username, string(hashedPassword))
-	return err
-}
-
-func (s *PostgresStorage) AuthenticateUser(username, password string) bool {
-	var storedPassword string
-	err := s.db.QueryRow("SELECT password FROM users WHERE username = $1", username).Scan(&storedPassword)
-	if err != nil {
-		return false
-	}
-	return password == storedPassword
 }
 
 func (s *PostgresStorage) Search(target string) ([]URLInfo, error) {
