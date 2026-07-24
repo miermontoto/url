@@ -255,3 +255,29 @@ h1 {
 #myUrlsList[style*="display: block"] ~ #dashboard {
     display: none !important;
 }
+
+/* marca de mier (emblema de mier.info): heredada por color → blanca sobre fondo
+   negro (cabecera) y negra sobre el botón claro. sprite oculto reutilizado con <use> */
+.brand-sprite {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+}
+
+.brand-mark {
+    fill: currentColor;
+}
+
+.site-mark {
+    width: 64px;
+    height: 64px;
+    display: inline-block;
+}
+
+.btn-mark {
+    width: 18px;
+    height: 18px;
+    vertical-align: -3px;
+    margin-right: 0.5rem;
+}
