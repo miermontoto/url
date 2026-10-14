@@ -8,7 +8,7 @@ async function loadMyUrls() {
     const urls = (await sendRequest('/my', 'GET')).data;
     const table = document.getElementById('urlsTableBody');
     table.dataset.urls = JSON.stringify(urls);
-    displayUrls(urls);
+    displayUrls(urls, loadMyUrls);
     updateDashboard(urls);
   } catch (error) {
     showError(error.message);

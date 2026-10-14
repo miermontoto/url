@@ -1,4 +1,9 @@
+import { deleteUrl } from './api.js';
+import { showError } from './ui.js';
+
 let currentSort = { column: 'date', ascending: false };
+// callback que recarga la lista tras borrar (lo inyecta main.js para evitar un import circular)
+let onDeleted = () => {};
 
 function formatDate(date) {
   return new Date(date).toLocaleString('sv', {
@@ -11,7 +16,8 @@ function formatDate(date) {
   });
 }
 
-function displayUrls(urls) {
+function displayUrls(urls, reload = onDeleted) {
+  onDeleted = reload;
   const table = document.getElementById('urlsTableBody');
   table.innerHTML = '';
 
@@ -58,7 +64,7 @@ function displayUrls(urls) {
     deleteButton.onclick = async () => {
       try {
         await deleteUrl(url.hash);
-        loadMyUrls();
+        onDeleted();
       } catch (error) {
         showError(error.message);
       }
